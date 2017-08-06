@@ -7,7 +7,7 @@ import Prelude
 import Control.Monad.Free (foldFree)
 import Control.Monad.State (execState, State, state)
 import Data.CatList (CatList)
-import Data.Foldable (fold)
+import Data.Foldable (elem, fold)
 import Data.Maybe (fromMaybe)
 import Data.StrMap (StrMap, fromFoldable, lookup)
 import Data.String (Pattern(Pattern), joinWith, length, split)
@@ -15,6 +15,13 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import Global (encodeURI)
 import Text.Smolder.Markup (Attr(..), Markup, MarkupM(..))
+
+voidElems :: Array String
+voidElems =
+  [ "area", "base", "br", "col", "command", "embed", "hr"
+  , "img", "input", "keygen", "link", "meta", "param"
+  , "source", "track", "wbr"
+  ]
 
 escapeMap :: StrMap String
 escapeMap = fromFoldable
@@ -44,7 +51,7 @@ isMIMEAttr tag attr
   | otherwise = false
 
 -- url attributes according to:
--- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes 
+-- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
 isURLAttr :: String -> String -> Boolean
 isURLAttr tag attr
   | attr == "href" && tag == "a" = true
@@ -90,11 +97,15 @@ showAttrs tag = map showAttr >>> fold
 renderItem :: ∀ e. MarkupM e ~> State String
 renderItem (Element name children attrs _ rest) =
   let c = render children
-      b = "<" <> name <> showAttrs name attrs <>
-          (if length c > 0
-           then ">" <> c <> "</" <> name <> ">"
-           else "/>")
+      b = "<" <> name <> showAttrs name attrs <> close name c
   in state \s → Tuple rest $ append s b
+  where
+  close tag kids
+    | tag `elem` voidElems = "/>"
+    | length kids > 0      = ">" <> kids <> end tag
+    | otherwise            = ">" <> end tag
+  end tag = "</" <> tag <> ">"
+
 renderItem (Content text rest) = state \s → Tuple rest $ append s $ escape escapeMap text
 renderItem (Empty rest) = pure rest
 
