@@ -16,6 +16,7 @@ import Data.Tuple.Nested ((/\))
 import Global (encodeURI)
 import Text.Smolder.Markup (Attr(..), Markup, MarkupM(..))
 
+-- | MODIFIED - added void elems list to determine correct closing tag
 voidElems :: Array String
 voidElems =
   [ "area", "base", "br", "col", "command", "embed", "hr"
@@ -94,6 +95,8 @@ showAttrs tag = map showAttr >>> fold
           <> escapeAttrValue tag key value
           <> "\""
 
+
+-- | MODIFIED - modified renderItem to correctly close tags
 renderItem :: ∀ e. MarkupM e ~> State String
 renderItem (Element name children attrs _ rest) =
   let c = render children

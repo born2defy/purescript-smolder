@@ -19,6 +19,8 @@ module Text.Smolder.Markup
   , withEvent
   , on
   , (#!)
+  -- MODIFIED - adding export for empty
+  , empty
   ) where
 
 import Prelude
@@ -69,6 +71,11 @@ leaf el = liftF $ Element el (liftF $ Empty unit) mempty mempty unit
 -- | Create a text node.
 text :: ∀ e. String → Markup e
 text s = liftF $ Content s unit
+
+
+-- | MODIFIED - added empty tag to replace mempty usage in previous implementation
+empty :: ∀ e. Markup e
+empty = liftF $ Empty unit
 
 data Attribute = Attribute (CatList Attr)
 
