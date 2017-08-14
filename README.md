@@ -1,3 +1,41 @@
+====================================================
+=============== FORK MODIFICATIONS =================
+====================================================
+
+This library has been modified in the following ways:
+
+1) In the Text.Smolder.Renderer.String.purs file to fix
+the string renderer to correctly close tags.
+
+-- | MODIFIED - added void elems list to determine correct closing tag
+voidElems :: Array String
+voidElems =
+  [ "area", "base", "br", "col", "command", "embed", "hr"
+  , "img", "input", "keygen", "link", "meta", "param"
+  , "source", "track", "wbr"
+  ]
+
+-- | MODIFIED - modified renderItem to correctly close tags
+renderItem :: ∀ e. MarkupM e ~> State String
+renderItem (Element name children attrs _ rest) =
+  let c = render children
+      b = "<" <> name <> showAttrs name attrs <> close name c
+  in state \s → Tuple rest $ append s b
+  where
+  close tag kids
+    | tag `elem` voidElems = "/>"
+    | length kids > 0      = ">" <> kids <> end tag
+    | otherwise            = ">" <> end tag
+  end tag = "</" <> tag <> ">"
+
+renderItem (Content text rest) = state \s → Tuple rest $ append s $ escape escapeMap text
+renderItem (Empty rest) = pure rest
+
+====================================================
+================ END MODIFICATIONS =================
+====================================================
+
+
 # purescript-smolder
 
 A simple combinator library for generating HTML in PureScript, heavily inspired by Haskell's [BlazeHtml](http://jaspervdj.be/blaze/).
